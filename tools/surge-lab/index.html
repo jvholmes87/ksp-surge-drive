@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SURGE Lab — KSP Drive Visual Simulator</title>
+<style>
+:root{color-scheme:dark;--bg:#080e1c;--panel:#111d32;--line:#293c58;--txt:#eaf3ff;--dim:#9bb1ca;--aqua:#5de5e3;--gold:#ffcb76}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173156,var(--bg) 47%);font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif;color:var(--txt)}
+main{max-width:1200px;margin:auto;padding:22px}header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+h1{font-size:clamp(23px,3vw,36px);margin:0;letter-spacing:.04em}h2{font-size:17px;margin:0 0 12px}p{color:var(--dim);margin:5px 0 16px}
+.tag{font-size:12px;letter-spacing:.08em;color:var(--aqua);font-weight:700;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:minmax(270px,330px) 1fr;gap:16px}.panel{background:#111d32e8;border:1px solid var(--line);border-radius:14px;padding:18px}
+label{display:block;margin:12px 0 4px;color:#dbe8fa;font-weight:600}.control{display:flex;justify-content:space-between;gap:10px}output{color:var(--aqua);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--aqua)}input[type=number]{width:100%;background:#09162a;border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--txt);font:inherit}
+button{background:var(--aqua);color:#06202b;border:0;border-radius:9px;padding:10px 16px;cursor:pointer;font-weight:700}button.secondary{color:var(--txt);background:#263b57}
+.buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(105px,1fr));gap:10px;margin:14px 0}
+.metric{padding:12px;background:#0b172b;border:1px solid var(--line);border-radius:10px}.metric small{display:block;color:var(--dim);font-size:12px}.metric strong{font-size:clamp(16px,2.2vw,23px);display:block;font-variant-numeric:tabular-nums}
+.scene{position:relative;overflow:hidden;border:1px solid var(--line);height:240px;background:radial-gradient(circle at center,#10274b 0%,#070d1b 85%);border-radius:12px}
+#space{position:absolute;inset:0;width:100%;height:100%}.ship{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:48px;filter:drop-shadow(0 0 14px #6de9f4);pointer-events:none}
+.ship::before{content:"◀";color:var(--aqua)}.status{position:absolute;bottom:10px;left:14px;color:var(--dim);font-size:12px}
+#chart{width:100%;height:180px;background:#09162a;border:1px solid var(--line);border-radius:9px}
+.legend{font-size:12px;color:var(--dim);margin:4px 0 10px}.notice{border-left:3px solid var(--gold);padding:8px 12px;background:#2a2630;color:#f5dfbb;font-size:13px;margin-top:14px}
+footer{font-size:12px;margin-top:18px;color:var(--dim)}
+@media(max-width:770px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}main{padding:13px}}
+</style>
+</head>
+<body><main>
+<header><div><div class="tag">Bobiverse-inspired / KSP community tool</div><h1>SURGE LAB</h1><p>Interactive acceleration and electrical budget demonstrator</p></div><div class="tag">Standalone · No install required</div></header>
+<div class="grid">
+<section class="panel" aria-label="Simulation controls"><h2>Drive configuration</h2>
+<label class="control" for="drives"><span>Aligned SURGE drives</span><output id="drivesValue">2</output></label><input id="drives" type="range" min="1" max="8" value="2">
+<label class="control" for="accel"><span>Acceleration per drive</span><output id="accelValue">200 m/s²</output></label><input id="accel" type="range" min="0" max="200" step="5" value="200">
+<label class="control" for="throttle"><span>Throttle</span><output id="throttleValue">100%</output></label><input id="throttle" type="range" min="0" max="100" step="5" value="100">
+<label for="reactor">Reactor supply (EC/s)</label><input id="reactor" type="number" min="0" max="1000000" step="10" value="800">
+<label for="battery">Starting battery (EC)</label><input id="battery" type="number" min="0" max="10000000" step="100" value="5000">
+<label class="control" for="rate"><span>Simulation speed</span><output id="rateValue">10×</output></label><input id="rate" type="range" min="1" max="100" value="10">
+<div class="buttons"><button id="play">Pause</button><button class="secondary" id="reset">Reset</button><button class="secondary" id="step">+1 second</button></div>
+<div class="notice">This is a simplified illustrative model, not a KSP physics engine, reactor mod, flight autopilot, or verified fix for Issue #2.</div>
+</section>
+<section class="panel" aria-label="Simulation output">
+<h2>Flight visualization</h2><div class="scene"><canvas id="space" aria-label="Starfield indicating spacecraft motion"></canvas><div class="ship" aria-hidden="true">◆</div><div class="status" id="status" aria-live="polite">Nominal power</div></div>
+<div class="metrics">
+<div class="metric"><small>Velocity</small><strong id="speed">0 m/s</strong></div>
+<div class="metric"><small>Distance</small><strong id="distance">0 km</strong></div>
+<div class="metric"><small>Effective accel</small><strong id="effective">0 g</strong></div>
+<div class="metric"><small>Battery EC</small><strong id="charge">5,000</strong></div>
+<div class="metric"><small>EC demand</small><strong id="demand">400/s</strong></div>
+<div class="metric"><small>EC available</small><strong id="supply">800/s</strong></div>
+<div class="metric"><small>Elapsed</small><strong id="time">0 s</strong></div>
+<div class="metric"><small>Ideal stop distance</small><strong id="stop">0 km</strong></div></div>
+<h2>Velocity history</h2><canvas id="chart" aria-label="Line chart of simulated velocity over time"></canvas><div class="legend">Horizontal: simulated seconds · Vertical: speed (m/s). Dashed reference: 30 g effective acceleration is <em>not</em> a speed limit.</div>
+</section></div>
+<footer><strong>Model:</strong> requested EC/s = drive count × acceleration setting × throttle. Reactor output and stored battery cover demand; battery charges from surplus reactor output, and discharges only for shortfall. Available EC scales acceleration proportionally. All drives are assumed aligned with identical settings. Units of EC are gameplay units, not joules. Acceleration displayed in g-equivalent (÷ 9.80665), not occupant loading. Coasting continues after EC depletion. Nothing here is based on live KSP telemetry. MIT-licensed companion to <a style="color:var(--aqua)" href="https://github.com/geuis/ksp-surge-drive">ksp-surge-drive</a>.</footer>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const clamp=(v,min,max)=>Math.min(max,Math.max(min,Number.isFinite(v)?v:min));
+const fmt=(x,d=0)=>Number(x).toLocaleString(undefined,{maximumFractionDigits:d});
+const params=()=>({n:+$("drives").value,a:+$("accel").value,t:+$("throttle").value/100,reactor:clamp(+$("reactor").value,0,1e6),battery:clamp(+$("battery").value,0,1e7)});
+let t=0,v=0,d=0,ec=5000,running=true,history=[[0,0]],last=0,acc=0,status="Nominal power",samples=0;
+function reset(){const p=params();t=0;v=0;d=0;ec=p.battery;acc=0;history=[[0,0]];samples=0;status="Ready";draw();}
+function integrate(dt){const p=params(),demand=p.n*p.a*p.t;const reactor=p.reactor;const generator=Math.min(demand,reactor);const deficit=demand-generator;const drawn=Math.min(ec,deficit*dt);const used=generator+drawn/dt;const powerRatio=demand>0?clamp(used/demand,0,1):0;
+const surplus=Math.max(0,reactor-demand);ec=Math.max(0,ec-drawn+surplus*dt);acc=p.n*p.a*p.t*powerRatio;d+=v*dt+0.5*acc*dt*dt;v+=acc*dt;t+=dt;status=demand===0?"Idle / coasting":powerRatio===1?"Nominal power":powerRatio>0?"Power limited":"No EC / coasting";
+samples++;if(samples%5===0){history.push([t,v]);if(history.length>400)history.shift();}}
+function setupControls(){["drives","accel","throttle","rate"].forEach(id=>$(id).addEventListener("input",()=>{labels();draw();}));["reactor","battery"].forEach(id=>$(id).addEventListener("change",()=>{if(id==="battery"&&t===0)ec=params().battery;draw();}));$("play").onclick=()=>{running=!running;$("play").textContent=running?"Pause":"Run";};$("reset").onclick=reset;$("step").onclick=()=>{for(let i=0;i<10;i++)integrate(0.1);draw();};labels();}
+function labels(){$("drivesValue").textContent=$("drives").value;$("accelValue").textContent=$("accel").value+" m/s²";$("throttleValue").textContent=$("throttle").value+"%";$("rateValue").textContent=$("rate").value+"×";}
+const stars=Array.from({length:125},(_,i)=>({x:(i*0.61803398875)%1,y:(i*0.41421356237)%1,r:0.6+(i%4)*0.35}));
+function fit(canvas){const r=canvas.getBoundingClientRect(),scale=Math.min(2,window.devicePixelRatio||1),w=Math.max(1,Math.round(r.width*scale)),h=Math.max(1,Math.round(r.height*scale));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}return [w,h];}
+function drawSpace(){const c=$("space"),[w,h]=fit(c),ctx=c.getContext("2d");ctx.clearRect(0,0,w,h);const speed=Math.min(3,v/25000);for(const s of stars){const x=((s.x-t*speed*.01)%1+1)%1*w;const y=s.y*h;ctx.beginPath();ctx.strokeStyle="#a4dbff";ctx.globalAlpha=.25+s.r/4;ctx.lineWidth=s.r*(w/800);ctx.moveTo(x,y);ctx.lineTo(x-Math.max(1,speed*14*w/800),y);ctx.stroke();}ctx.globalAlpha=1;}
+function drawChart(){const c=$("chart"),[w,h]=fit(c),ctx=c.getContext("2d");ctx.clearRect(0,0,w,h);const pad=28,xmin=history[0][0],xmax=Math.max(t,xmin+1),ymax=Math.max(1,v*1.08);ctx.strokeStyle="#314762";ctx.lineWidth=1;for(let i=0;i<=4;i++){const y=pad+(h-2*pad)*i/4;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-12,y);ctx.stroke();}
+ctx.beginPath();history.forEach(([x,y],i)=>{const px=pad+(x-xmin)/(xmax-xmin)*(w-pad-12),py=h-pad-y/ymax*(h-2*pad);if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)});ctx.strokeStyle="#5de5e3";ctx.lineWidth=2.5;ctx.stroke();ctx.fillStyle="#b8cbe3";ctx.font="12px sans-serif";ctx.fillText(fmt(ymax)+" m/s",3,15);ctx.fillText(fmt(xmax)+" s",w-75,h-5);}
+function draw(){const p=params(),demand=p.n*p.a*p.t;const use=Math.min(demand,p.reactor+(ec>0?ec/0.1:0));$("speed").textContent=fmt(v,1)+" m/s";$("distance").textContent=fmt(d/1000,3)+" km";$("effective").textContent=fmt(acc/9.80665,2)+" g";$("charge").textContent=fmt(ec,1);$("demand").textContent=fmt(demand,1)+"/s";$("supply").textContent=fmt(p.reactor,1)+"/s";$("time").textContent=fmt(t,1)+" s";$("stop").textContent=acc>0?fmt(v*v/(2*acc)/1000,2)+" km":"—";$("status").textContent=status+" · ideal aligned thrust";drawSpace();drawChart();}
+function frame(ms){if(last){let elapsed=Math.min(.1,(ms-last)/1000);if(running){const desired=elapsed*(+$("rate").value);while(desired>1e-8){const step=Math.min(.1,desired);integrate(step);desired-=step;}}}last=ms;draw();requestAnimationFrame(frame);}
+setupControls();reset();requestAnimationFrame(frame);window.addEventListener("resize",draw);
+</script></body></html>
