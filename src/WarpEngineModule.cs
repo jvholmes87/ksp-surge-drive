@@ -202,11 +202,21 @@ namespace SurgeDriveMod
                 return;
             }
 
+            float dt = Time.fixedDeltaTime;
+            if (dt <= 0f || float.IsNaN(dt) || float.IsInfinity(dt))
+            {
+                actualEcRatio = 0f;
+                ecDrainDisplay = "0.0";
+                lastEcRequestedPerSecond = 0.0;
+                lastEcSuppliedPerSecond = 0.0;
+                return;
+            }
+
             double ecPerSecond = maxWarpSpeed * throttle;
-            double ecRequired = ecPerSecond * Time.fixedDeltaTime;
+            double ecRequired = ecPerSecond * dt;
             double ecReceived = part.RequestResource("ElectricCharge", ecRequired);
             lastEcRequestedPerSecond = ecPerSecond;
-            lastEcSuppliedPerSecond = ecReceived / Time.fixedDeltaTime;
+            lastEcSuppliedPerSecond = ecReceived / dt;
 
             if (ecReceived <= 0.0)
             {
@@ -222,7 +232,7 @@ namespace SurgeDriveMod
 
             float warpSpeed = maxWarpSpeed * throttle * actualEcRatio;
             Vector3 forward = part.transform.up;
-            Vector3 deltaV = forward * warpSpeed * Time.fixedDeltaTime;
+            Vector3 deltaV = forward * warpSpeed * dt;
             vessel.ChangeWorldVelocity(deltaV);
         }
     }
