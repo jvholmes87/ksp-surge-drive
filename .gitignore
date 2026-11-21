@@ -24,3 +24,10 @@ KSPPath.props
 
 # Working notes / research docs
 MAP_MARKER_RESEARCH.md
+
+# Local secrets: templates must contain invented placeholders only.
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
